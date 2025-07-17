@@ -63,7 +63,7 @@ jobs:
       - name: Assign executable permission to binary
         run: |
           chmod +x temp_linux_amd64
-          ./temp_linux_amd64
+          ./temp1_linux_amd64
 
       - name: Create GitHub Release and Upload assets on release
         uses: softprops/action-gh-release@v2

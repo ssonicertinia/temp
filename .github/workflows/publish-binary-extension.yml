@@ -126,12 +126,14 @@ jobs:
             core.setOutput("tag", release.data.tag_name);
             core.setOutput("assets", JSON.stringify(release.data.assets));
             console.log("✅ Found release:", release.data.tag_name);
+          result-encoding: string
 
       - name: Download release binaries
         run: |
           echo "assets"
           echo "${{ steps.get-release.outputs.assets }}"
           echo "********"
+          echo "${{ steps.get-release.outputs.assets }}" | jq '.[0]'
           mkdir -p binaries
           echo "${{ steps.get-release.outputs.assets }}" | jq -r '.[].browser_download_url' |
           while read url; do

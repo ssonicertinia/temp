@@ -134,6 +134,7 @@ jobs:
         run: |
           echo "${{ steps.get-release.outputs.assets }}"
           echo "*******"
+          mkdir -p binaries
           echo "${{ steps.get-release.outputs.assets }}" | grep -oP 'browser_download_url:\s*\Khttps?://[^,}]*' | while read url; do
             echo "⬇️ Downloading $url"
             curl -L -o "binaries/$(basename "$url")" "$url"

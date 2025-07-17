@@ -70,23 +70,23 @@ jobs:
         with:
           files: |
             temp.exe
-            demo_darwin_amd64
-            demo_darwin_arm64
+            temp_darwin_amd64
+            temp_darwin_arm64
             temp_linux_amd64
-            demo_linux_arm64
+            temp_linux_arm64
           body: |
             ## 📦 Binaries
 
             ```
             temp_linux_amd64
-            demo_darwin_arm64
+            temp_darwin_arm64
             temp.exe
             ```
 
             ## 🚀 What's in this release
 
             - 🐧 [`temp_linux_amd64` — Linux (amd64)](https://github.com/${{ github.repository_owner }}/temp/releases/download/${{ needs.check-tag.outputs.tag_number }}/temp_linux_amd64)
-            - 🍏 [`demo_darwin_arm64` — macOS (ARM64 Apple Silicon)](https://github.com/${{ github.repository_owner }}/temp/releases/download/${{ needs.check-tag.outputs.tag_number }}/demo_darwin_arm64)
+            - 🍏 [`temp_darwin_arm64` — macOS (ARM64 Apple Silicon)](https://github.com/${{ github.repository_owner }}/temp/releases/download/${{ needs.check-tag.outputs.tag_number }}/demo_darwin_arm64)
             - 🪟 [`temp.exe` — Windows (amd64)](https://github.com/${{ github.repository_owner }}/temp/releases/download/${{ needs.check-tag.outputs.tag_number }}/temp.exe)
             - 🧩 VSCode extension (`.vsix`)
         env:

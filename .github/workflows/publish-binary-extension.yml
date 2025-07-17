@@ -135,7 +135,7 @@ jobs:
           echo "assets"
           echo "${{ steps.get-release.outputs.assets }}"
           echo "********"
-          echo "${{ steps.get-release.outputs.assets }}" | jq '.[0]'
+          echo "${{ steps.get-release.outputs.assets }}"
           mkdir -p binaries
           echo "$DATA" | grep -oP "browser_download_url:\s*'\K[^']+" | while read url; do
             echo "⬇️ Downloading $url"

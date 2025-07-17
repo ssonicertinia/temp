@@ -114,42 +114,31 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Find latest release tag
+      - name: Get latest release info
         id: get-release
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const releases = await github.rest.repos.listReleases({
+            const release = await github.rest.repos.getLatestRelease({
               owner: context.repo.owner,
               repo: context.repo.repo
             });
+            core.setOutput("tag", release.data.tag_name);
+            core.setOutput("assets", JSON.stringify(release.data.assets));
+            console.log("✅ Found release:", release.data.tag_name);
 
-            const binaryRelease = releases.data.find(r => /^v\d+\.\d+\.\d+$/.test(r.tag_name));
-            if (!binaryRelease) {
-              core.setFailed("No valid release found (e.g., v1.2.3)");
-              return;
-            }
-
-            core.setOutput("tag", binaryRelease.tag_name);
-            core.setOutput("assets", JSON.stringify(binaryRelease.assets));
-            console.log("✅ Found release:", binaryRelease.tag_name);
-
-      - name: Install jq
-        run: sudo apt-get install jq
-
-      - name: Download binaries from release
+      - name: Download release binaries
         run: |
-          mkdir -p binaries
           echo "assets"
           echo "${{ steps.get-release.outputs.assets }}"
           echo "********"
-          echo "${{ steps.get-release.outputs.assets }}" | jq -r '.[] | "\(.browser_download_url)"' |
+          mkdir -p binaries
+          echo "${{ steps.get-release.outputs.assets }}" | jq -r '.[].browser_download_url' |
           while read url; do
             echo "⬇️ Downloading $url"
             curl -L -o "binaries/$(basename "$url")" "$url"
           done
-          ls ./binaries
-          chmod +x ./binaries/temp_linux_amd64
-          ./binaries/temp_linux_amd64
+
+      - name: List downloaded binaries
+        run: ls -lh binaries
 

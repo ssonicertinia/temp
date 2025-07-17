@@ -1,0 +1,155 @@
+name: Release Workflow
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'v*.*.*-vsce'
+
+jobs:
+  check-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      publish_binary: ${{ steps.set-vars.outputs.publish_binary }}
+      publish_extension: ${{ steps.set-vars.outputs.publish_extension }}
+      tag_number: ${{ steps.set-vars.outputs.tag_number }}
+
+    steps:
+      - name: Set output variables based on tag
+        id: set-vars
+        run: |
+          TAG="${GITHUB_REF##*/}"
+          echo "Tag is: $TAG"
+
+          if [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Standard release"
+            echo "publish_binary=true" >> $GITHUB_OUTPUT
+            echo "publish_extension=true" >> $GITHUB_OUTPUT
+          elif [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-vsce$ ]]; then
+            echo "VSCE-only release"
+            echo "publish_binary=false" >> $GITHUB_OUTPUT
+            echo "publish_extension=true" >> $GITHUB_OUTPUT
+          else
+            echo "Tag format not recognized"
+            exit 1
+          fi
+
+          echo "tag_number=$TAG" >> $GITHUB_OUTPUT
+
+  release-binary:
+    if: ${{ needs.check-tag.outputs.publish_binary == 'true' }}
+    needs: check-tag
+    runs-on: ubuntu-latest
+    env:
+      TAG_NUMBER: ${{ needs.check-tag.outputs.tag_number }}
+    steps:
+      - name: Skip if not needed
+        if: needs.check-tag.outputs.publish_binary != 'true'
+        run: |
+          echo "Skipping release-binary because publish_binary is false"
+          exit 0
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.23.0
+
+      - name: Build Binaries using Makefile
+        run: make build-all-binaries
+      
+      - name: Assign executable permission to binary
+        run: |
+          chmod +x temp_linux_amd64
+          ./temp_linux_amd64
+
+      - name: Create GitHub Release and Upload assets on release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            temp.exe
+            demo_darwin_amd64
+            demo_darwin_arm64
+            temp_linux_amd64
+            demo_linux_arm64
+          body: |
+            ## 📦 Binaries
+
+            ```
+            temp_linux_amd64
+            demo_darwin_arm64
+            temp.exe
+            ```
+
+            ## 🚀 What's in this release
+
+            - 🐧 [`temp_linux_amd64` — Linux (amd64)](https://github.com/${{ github.repository_owner }}/temp/releases/download/${{ needs.check-tag.outputs.tag_number }}/temp_linux_amd64)
+            - 🍏 [`demo_darwin_arm64` — macOS (ARM64 Apple Silicon)](https://github.com/${{ github.repository_owner }}/temp/releases/download/${{ needs.check-tag.outputs.tag_number }}/demo_darwin_arm64)
+            - 🪟 [`temp.exe` — Windows (amd64)](https://github.com/${{ github.repository_owner }}/temp/releases/download/${{ needs.check-tag.outputs.tag_number }}/temp.exe)
+            - 🧩 VSCode extension (`.vsix`)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+  publish-extension:
+    if: >
+      always() &&
+      needs.check-tag.outputs.publish_extension == 'true' &&
+      (
+        needs.release-binary.result == 'success' || needs.release-binary.result == 'skipped'
+      )
+    needs: [check-tag, release-binary]
+    runs-on: ubuntu-latest
+    env:
+      TAG_NUMBER: ${{ needs.check-tag.outputs.tag_number }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Find latest release tag
+        id: get-release
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const releases = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+
+            const binaryRelease = releases.data.find(r => /^v\d+\.\d+\.\d+$/.test(r.tag_name));
+            if (!binaryRelease) {
+              core.setFailed("No valid release found (e.g., v1.2.3)");
+              return;
+            }
+
+            core.setOutput("tag", binaryRelease.tag_name);
+            core.setOutput("assets", JSON.stringify(binaryRelease.assets));
+            console.log("✅ Found release:", binaryRelease.tag_name);
+
+      - name: Install jq
+        run: sudo apt-get install jq
+
+      - name: Download binaries from release
+        run: |
+          mkdir -p binaries
+          echo "assets"
+          echo "${{ steps.get-release.outputs.assets }}"
+          echo "********"
+          echo "${{ steps.get-release.outputs.assets }}" | jq -r '.[] | "\(.browser_download_url)"' |
+          while read url; do
+            echo "⬇️ Downloading $url"
+            curl -L -o "binaries/$(basename "$url")" "$url"
+          done
+          ls ./binaries
+          chmod +x ./binaries/temp_linux_amd64
+          ./binaries/temp_linux_amd64
+

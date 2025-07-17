@@ -37,7 +37,7 @@ jobs:
           echo "tag_number=$TAG" >> $GITHUB_OUTPUT
 
   release-binary:
-    if: ${{ needs.check-tag.outputs.publish_binary == 'true' }}
+    # if: ${{ needs.check-tag.outputs.publish_binary == 'true' }}
     needs: check-tag
     runs-on: ubuntu-latest
     env:
@@ -59,11 +59,6 @@ jobs:
 
       - name: Build Binaries using Makefile
         run: make build-all-binaries
-      
-      - name: Assign executable permission to binary
-        run: |
-          chmod +x temp_linux_amd64
-          ./temp1_linux_amd64
 
       - name: Create GitHub Release and Upload assets on release
         uses: softprops/action-gh-release@v2
@@ -94,16 +89,15 @@ jobs:
 
 
   publish-extension:
-    if: >
-      always() &&
-      needs.check-tag.outputs.publish_extension == 'true' &&
-      (
-        needs.release-binary.result == 'success' || needs.release-binary.result == 'skipped'
-      )
+    if: ${{ needs.check-tag.outputs.publish_extension == 'true' }}
+      # always() &&
+      #  &&
+      # (
+      #   needs.release-binary.result == 'success' || needs.release-binary.result == 'skipped'
+      # )
     needs: [check-tag, release-binary]
     runs-on: ubuntu-latest
-    env:
-      TAG_NUMBER: ${{ needs.check-tag.outputs.tag_number }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -124,16 +118,12 @@ jobs:
               repo: context.repo.repo
             });
             
-            console.log("release.data.assets", release.data.assets)
             core.setOutput("tag", release.data.tag_name);
             core.setOutput("assets", JSON.stringify(release.data.assets));
             console.log("✅ Found release:", release.data.tag_name);
-          # result-encoding: string
 
       - name: Download release binaries
         run: |
-          echo "${{ steps.get-release.outputs.assets }}"
-          echo "*******"
           mkdir -p binaries
           echo "${{ steps.get-release.outputs.assets }}" | grep -oP 'browser_download_url:\s*\Khttps?://[^,}]*' | while read url; do
             echo "⬇️ Downloading $url"

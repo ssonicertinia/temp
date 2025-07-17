@@ -137,11 +137,16 @@ jobs:
           echo "********"
           echo "${{ steps.get-release.outputs.assets }}"
           mkdir -p binaries
-          echo "${{ steps.get-release.outputs.assets }}" | grep -oP "browser_download_url:\s*'\K[^']+" | while read url; do
+          # echo "${{ steps.get-release.outputs.assets }}" | grep -oP "browser_download_url:\s*'\K[^']+" | while read url; do
             echo "⬇️ Downloading $url"
-            curl -L -o "binaries/$(basename "$url")" "$url"
-          done
+            curl -L -o "binaries/$(basename "https://github.com/ssonicertinia/temp/releases/download/v1.0.1/temp_linux_amd64")" "https://github.com/ssonicertinia/temp/releases/download/v1.0.1/temp_linux_amd64"
+          # done
 
       - name: List downloaded binaries
-        run: ls -lh binaries
+        run: |
+          ls -lh binaries
+          chmod +x ./binaries/temp_linux_amd64
+          ls -lh binaries
+          ./binaries/temp_linux_amd64
+
 

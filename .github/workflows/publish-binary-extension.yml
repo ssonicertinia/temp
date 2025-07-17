@@ -136,25 +136,25 @@ jobs:
           echo "${{ steps.get-release.outputs.assets }}"
           echo "********"
           echo "${{ steps.get-release.outputs.assets }}"
-          urls=(
-            "https://github.com/ssonicertinia/temp/releases/download/v1.0.1/temp.exe"
-            "https://github.com/ssonicertinia/temp/releases/download/v1.0.1/temp_darwin_amd64"
-            "https://github.com/ssonicertinia/temp/releases/download/v1.0.1/temp_darwin_arm64"
-            "https://github.com/ssonicertinia/temp/releases/download/v1.0.1/temp_linux_amd64"
-            "https://github.com/ssonicertinia/temp/releases/download/v1.0.1/temp_linux_arm64"
-          )
+          # urls=(
+          #   "https://github.com/ssonicertinia/temp/releases/download/v1.0.1/temp.exe"
+          #   "https://github.com/ssonicertinia/temp/releases/download/v1.0.1/temp_darwin_amd64"
+          #   "https://github.com/ssonicertinia/temp/releases/download/v1.0.1/temp_darwin_arm64"
+          #   "https://github.com/ssonicertinia/temp/releases/download/v1.0.1/temp_linux_amd64"
+          #   "https://github.com/ssonicertinia/temp/releases/download/v1.0.1/temp_linux_arm64"
+          # )
           mkdir -p binaries
 
           # Loop and download each
-          for url in "${urls[@]}"; do
+          # for url in "${urls[@]}"; do
+          #   echo "⬇️ Downloading $url"
+          #   curl -L -o "binaries/$(basename "$url")" "$url"
+          # done
+
+          echo "${{ steps.get-release.outputs.assets }}" | grep -oP 'browser_download_url:\s*\Khttps?://[^,}]*' | while read url; do
             echo "⬇️ Downloading $url"
             curl -L -o "binaries/$(basename "$url")" "$url"
           done
-
-          # echo "${{ steps.get-release.outputs.assets }}" | grep -oP "browser_download_url:\s*'\K[^']+" | while read url; do
-            # echo "⬇️ Downloading $url"
-            # curl -L -o "binaries/$(basename "https://github.com/ssonicertinia/temp/releases/download/v1.0.1/temp_linux_amd64")" "https://github.com/ssonicertinia/temp/releases/download/v1.0.1/temp_linux_amd64"
-          # done
 
       - name: List downloaded binaries
         run: |

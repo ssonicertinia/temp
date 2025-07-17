@@ -37,7 +37,7 @@ jobs:
           echo "tag_number=$TAG" >> $GITHUB_OUTPUT
 
   release-binary:
-    # if: ${{ needs.check-tag.outputs.publish_binary == 'true' }}
+    if: ${{ needs.check-tag.outputs.publish_binary == 'true' }}
     needs: check-tag
     runs-on: ubuntu-latest
     env:
@@ -89,12 +89,12 @@ jobs:
 
 
   publish-extension:
-    if: ${{ needs.check-tag.outputs.publish_extension == 'true' }}
-      # always() &&
-      #  &&
-      # (
-      #   needs.release-binary.result == 'success' || needs.release-binary.result == 'skipped'
-      # )
+    if: >
+      always() &&
+      needs.check-tag.outputs.publish_extension == 'true' &&
+      (
+        needs.release-binary.result == 'success' || needs.release-binary.result == 'skipped'
+      )
     needs: [check-tag, release-binary]
     runs-on: ubuntu-latest
 
